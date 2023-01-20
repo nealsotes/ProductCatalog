@@ -1,34 +1,43 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProductCatalogAPI.Business.Services;
 using ProductCatalogAPI.Models;
 
 namespace ProductCatalogAPI.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class ProductsController : ControllerBase
     {
-        private readonly ProductService _productservice;
-        public ProductsController(ProductService productservice)
+
+        private readonly IProductService _productService;
+        public ProductsController(IProductService productservice)
         {
-            _productservice = productservice;
+            _productService = productservice;
+
         }
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
         {
-            var products = await _productservice.GetProductsAsync();
+
+            var products = await _productService.GetAllAsync();
             return Ok(products);
         }
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(int id)
         {
-            var product = await _productservice.GetProductByIdAsync(id);
+
+
+            var product = await _productService.GetByIdAsync(id);
             if (product == null)
             {
+
                 return NotFound();
             }
             return Ok(product);
@@ -36,51 +45,66 @@ namespace ProductCatalogAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<Product>> PostProduct([FromBody] Product product)
         {
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
+               
                 return BadRequest(ModelState);
             }
-            await _productservice.AddProductAsync(product);
-            return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
+            var sanitizedProduct = new Product
+            {
+                Name = HtmlEncoder.Default.Encode(product.Name),
+                Description = HtmlEncoder.Default.Encode(product.Description),
+                Price = product.Price,
+                ImageUrl = HtmlEncoder.Default.Encode(product.ImageUrl)
+            };
+            await _productService.AddAsync(sanitizedProduct);
+            return CreatedAtAction(nameof(GetProduct), new { id = sanitizedProduct.Id }, sanitizedProduct);
         }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> PutProduct(int id, Product product)
         {
-            if (id != product.Id)
-            {
-                return BadRequest();
-            }
+         
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
+            var sanitizedProduct = new Product
+            {
+                Id = product.Id,
+                Name = HtmlEncoder.Default.Encode(product.Name),
+                Description = HtmlEncoder.Default.Encode(product.Description),
+                Price = product.Price,
+                ImageUrl = HtmlEncoder.Default.Encode(product.ImageUrl)
+
+            };
             try
             {
-                await _productservice.UpdateProductAsync(product);
-            }
-            catch (Exception)
-            {
-                if (!await _productservice.ProductExistsAsync(id))
+                //check if the product exist
+                if (!await _productService.ProductExistAsync(id))
                 {
                     return NotFound();
                 }
-                else
-                {
-                    throw;
-                }
-                
+                await _productService.UpdateAsync(sanitizedProduct);
+            }
+            catch (Exception)
+            {
+                throw;
             }
             return NoContent();
         }
+
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
-            var product = await _productservice.GetProductByIdAsync(id);
+            var product = await _productService.GetByIdAsync(id);
             if (product == null)
             {
                 return NotFound();
             }
-            await _productservice.DeleteProductAsync(product);
+
+            await _productService.DeleteAsync(product);
             return NoContent();
         }
       

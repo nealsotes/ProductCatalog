@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProductCatalogAPI.Models;
 
@@ -15,8 +17,9 @@ namespace ProductCatalogAPI.Data
         }
         public DbSet<Product> Products { get; set; }
         public DbSet<Category> Categories { get; set; }
-        public DbSet<ProductCategory> ProductCategories { get; set; }
         
+        public DbSet<ProductCategory> ProductCategories { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Product>().ToTable("Product");

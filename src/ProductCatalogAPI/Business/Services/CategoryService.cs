@@ -7,6 +7,7 @@ using ProductCatalogAPI.Models;
 
 namespace ProductCatalogAPI.Business.Services
 {
+ 
     public class CategoryService
     {
         private readonly ICategoryRepository _categoryRepository;
@@ -35,6 +36,12 @@ namespace ProductCatalogAPI.Business.Services
         {
             await _categoryRepository.DeleteAsync(category);
         }
-        
+        //implement CategoryExistsAsync method
+        public async Task<bool> CategoryExistsAsync(int id)
+        {
+            return await _categoryRepository.GetByIdAsync(id) != null;
+        }
+
+
     }
 }
